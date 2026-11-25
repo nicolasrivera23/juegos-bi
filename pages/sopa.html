@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sopa de Letras: Fórmulas de Google Sheets</title>
+  <style>
+    :root {
+      --bg-dark: #0f172a;
+      --bg-panel: #1e293b;
+      --primary: #6b21a8;
+      --primary-light: #9333ea;
+      --accent: #10b981;
+      --accent-soft: rgba(16, 185, 129, 0.22);
+      --select-bg: rgba(147, 51, 234, 0.45);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1.25rem 1rem;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 1.25rem;
+      max-width: 820px;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      margin-bottom: 0.35rem;
+      background: linear-gradient(90deg, #10b981, #c084fc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    .stats-bar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1.25rem;
+      background: var(--bg-panel);
+      padding: 0.65rem 1.4rem;
+      border-radius: 12px;
+      margin-bottom: 1.25rem;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    .stats-bar span {
+      color: var(--accent);
+    }
+
+    .layout {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 1.5rem;
+      max-width: 1020px;
+      width: 100%;
+    }
+
+    .grid-wrapper {
+      background: var(--bg-panel);
+      padding: 0.85rem;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.45);
+      touch-action: none;
+      user-select: none;
+    }
+
+    .word-grid {
+      display: grid;
+      gap: 3px;
+    }
+
+    .cell {
+      width: 34px;
+      height: 34px;
+      background: rgba(15, 23, 42, 0.75);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--text-main);
+      cursor: pointer;
+      transition: background 0.12s, transform 0.12s, color 0.12s;
+    }
+
+    @media (max-width: 540px) {
+      .cell {
+        width: 24px;
+        height: 24px;
+        font-size: 0.78rem;
+        border-radius: 4px;
+      }
+      .grid-wrapper {
+        padding: 0.5rem;
+      }
+    }
+
+    .cell.selecting {
+      background: var(--select-bg);
+      color: #f3e8ff;
+      transform: scale(1.06);
+      border: 1px solid #c084fc;
+    }
+
+    .cell.found {
+      background: var(--accent-soft);
+      color: #6ee7b7;
+      border: 1px solid rgba(16, 185, 129, 0.5);
+    }
+
+    .cell.pop {
+      animation: popCell 0.35s ease;
+    }
+
+    @keyframes popCell {
+      0% { transform: scale(0.85); }
+      60% { transform: scale(1.15); }
+      100% { transform: scale(1); }
+    }
+
+    .sidebar {
+      flex: 1;
+      min-width: 270px;
+      max-width: 380px;
+      background: var(--bg-panel);
+      padding: 1.25rem;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .sidebar h2 {
+      font-size: 1.05rem;
+      color: #e9d5ff;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 0.5rem;
+    }
+
+    .word-list {
+      list-style: none;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.5rem;
+    }
+
+    .word-item {
+      background: rgba(15, 23, 42, 0.6);
+      padding: 0.45rem 0.65rem;
+      border-radius: 7px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      border: 1px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .word-item.found {
+      text-decoration: line-through;
+      color: var(--accent);
+      background: rgba(16, 185, 129, 0.12);
+      border-color: rgba(16, 185, 129, 0.3);
+    }
+
+    .info-card {
+      background: rgba(15, 23, 42, 0.65);
+      border-left: 4px solid var(--accent);
+      padding: 0.85rem;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      line-height: 1.4;
+      min-height: 76px;
+    }
+
+    .info-card strong {
+      display: block;
+      color: var(--accent);
+      margin-bottom: 0.25rem;
+      font-size: 0.92rem;
+    }
+
+    .btn {
+      background: linear-gradient(90deg, var(--primary), var(--primary-light));
+      color: white;
+      border: none;
+      padding: 0.75rem 1.4rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: transform 0.15s, opacity 0.15s;
+      width: 100%;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      opacity: 0.95;
+    }
+
+    /* Modal de Victoria */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      z-index: 20;
+    }
+
+    .overlay.hidden {
+      display: none;
+    }
+
+    .modal {
+      background: var(--bg-panel);
+      padding: 2rem;
+      border-radius: 16px;
+      max-width: 430px;
+      width: 100%;
+      text-align: center;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      box-shadow: 0 25px 30px -5px rgba(0, 0, 0, 0.6);
+    }
+
+    .modal h2 {
+      font-size: 1.6rem;
+      margin-bottom: 0.6rem;
+      color: var(--accent);
+    }
+
+    .modal p {
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>📗 Sopa de Letras: Google Sheets</h1>
+    <p class="subtitle">Arrastra sobre las letras (horizontal, vertical o diagonal) para encontrar las funciones esenciales de hojas de cálculo.</p>
+  </header>
+
+  <div class="stats-bar">
+    <div>Encontradas: <span id="found-count">0</span> / <span id="total-count">10</span></div>
+    <div>Tiempo: <span id="timer">00:00</span></div>
+  </div>
+
+  <main class="layout">
+    <div class="grid-wrapper">
+      <div class="word-grid" id="word-grid"></div>
+    </div>
+
+    <aside class="sidebar">
+      <h2>🔍 Fórmulas a buscar</h2>
+      <ul class="word-list" id="word-list"></ul>
+
+      <div class="info-card" id="info-card">
+        <strong>💡 Tip de estudio</strong>
+        Encuentra una fórmula en el tablero para ver aquí para qué sirve en Google Sheets.
+      </div>
+
+      <button class="btn" onclick="initGame()">Generar Nuevo Tablero ↻</button>
+    </aside>
+  </main>
+
+  <!-- Modal de Victoria -->
+  <div class="overlay hidden" id="win-modal">
+    <div class="modal">
+      <h2>🏆 ¡Tablero Completado!</h2>
+      <p id="win-text">Encontraste todas las fórmulas de Google Sheets.</p>
+      <button class="btn" onclick="initGame()">Jugar Otra Vez</button>
+    </div>
+  </div>
+
+  <script>
+    /* =========================================================================
+       CONFIGURACIÓN DEL JUEGO (ZONA EDITABLE SIN SABER PROGRAMAR)
+       =========================================================================
+       Instrucciones para personalizar:
+       1. Puedes editar el tamaño de la cuadrícula en TAMANO_TABLERO (ej. 13 o 14).
+          Asegúrate de que sea igual o mayor a la palabra más larga.
+       2. En FORMULAS_GSHEETS puedes agregar, quitar o cambiar palabras:
+          { palabra: "NOMBRE", descripcion: "Explicación breve de la fórmula" },
+       3. Escribe las palabras sin espacios ni signos (ej. SUMARSI en vez de SUMAR.SI).
+       ========================================================================= */
+
+    const TAMANO_TABLERO = 13;
+
+    const FORMULAS_GSHEETS = [
+      {
+        palabra: "BUSCARV",
+        descripcion: "Busca un valor en la primera columna de un rango y devuelve el dato de otra columna en la misma fila."
+      },
+      {
+        palabra: "IMPORTRANGE",
+        descripcion: "Importa un rango de celdas desde otra hoja de cálculo de Google Sheets usando su URL o ID."
+      },
+      {
+        palabra: "QUERY",
+        descripcion: "Ejecuta consultas tipo SQL sobre los datos para filtrar, agrupar y ordenar información."
+      },
+      {
+        palabra: "SUMARSI",
+        descripcion: "Suma únicamente las celdas de un rango que cumplen con un criterio específico."
+      },
+      {
+        palabra: "FILTRAR",
+        descripcion: "Devuelve dinámicamente solo las filas o columnas que cumplen una o varias condiciones."
+      },
+      {
+        palabra: "INDICE",
+        descripcion: "Devuelve el contenido de una celda según su número de fila y columna dentro de un rango."
+      },
+      {
+        palabra: "COINCIDIR",
+        descripcion: "Devuelve la posición relativa de un elemento dentro de un rango que coincide con un valor."
+      },
+      {
+        palabra: "CONCATENAR",
+        descripcion: "Une varias cadenas de texto o valores de distintas celdas en una sola."
+      },
+      {
+        palabra: "PROMEDIO",
+        descripcion: "Calcula la media aritmética de un conjunto de valores numéricos ignorando textos."
+      },
+      {
+        palabra: "CONTARSI",
+        descripcion: "Cuenta cuántas celdas dentro de un rango cumplen con una condición determinada."
+      }
+    ];
+
+    /* =========================================================================
+       LÓGICA DEL JUEGO (NO ES NECESARIO MODIFICAR DE AQUÍ EN ADELANTE)
+       ========================================================================= */
+
+    const DIRECCIONES = [
+      [0, 1],   // Derecha
+      [1, 0],   // Abajo
+      [1, 1],   // Diagonal abajo-derecha
+      [-1, 1],  // Diagonal arriba-derecha
+      [0, -1],  // Izquierda
+      [-1, 0],  // Arriba
+      [1, -1],  // Diagonal abajo-izquierda
+      [-1, -1]  // Diagonal arriba-izquierda
+    ];
+
+    let grid = [];
+    let cellElements = [];
+    let foundWords = new Set();
+    let isDragging = false;
+    let startCell = null;
+    let currentSelection = [];
+    let seconds = 0;
+    let timerInterval = null;
+
+    const gridEl = document.getElementById("word-grid");
+    const listEl = document.getElementById("word-list");
+    const infoCardEl = document.getElementById("info-card");
+    const foundCountEl = document.getElementById("found-count");
+    const totalCountEl = document.getElementById("total-count");
+    const timerEl = document.getElementById("timer");
+    const winModalEl = document.getElementById("win-modal");
+    const winTextEl = document.getElementById("win-text");
+
+    function normalizar(texto) {
+      return texto
+        .toUpperCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^A-ZÑ]/g, "");
+    }
+
+    function formatTime(sec) {
+      const m = String(Math.floor(sec / 60)).padStart(2, "0");
+      const s = String(sec % 60).padStart(2, "0");
+      return `${m}:${s}`;
+    }
+
+    function startTimer() {
+      clearInterval(timerInterval);
+      seconds = 0;
+      timerEl.textContent = "00:00";
+      timerInterval = setInterval(() => {
+        seconds++;
+        timerEl.textContent = formatTime(seconds);
+      }, 1000);
+    }
+
+    function generarTablero() {
+      grid = Array.from({ length: TAMANO_TABLERO }, () => Array(TAMANO_TABLERO).fill(""));
+      const ordenadas = [...FORMULAS_GSHEETS]
+        .map(item => ({ ...item, limpia: normalizar(item.palabra) }))
+        .sort((a, b) => b.limpia.length - a.limpia.length);
+
+      for (const item of ordenadas) {
+        const palabra = item.limpia;
+        let colocada = false;
+        let intentos = 0;
+
+        while (!colocada && intentos < 250) {
+          intentos++;
+          const [dr, dc] = DIRECCIONES[Math.floor(Math.random() * DIRECCIONES.length)];
+          const r0 = Math.floor(Math.random() * TAMANO_TABLERO);
+          const c0 = Math.floor(Math.random() * TAMANO_TABLERO);
+
+          const rFin = r0 + dr * (palabra.length - 1);
+          const cFin = c0 + dc * (palabra.length - 1);
+
+          if (rFin < 0 || rFin >= TAMANO_TABLERO || cFin < 0 || cFin >= TAMANO_TABLERO) {
+            continue;
+          }
+
+          let cabe = true;
+          for (let i = 0; i < palabra.length; i++) {
+            const r = r0 + dr * i;
+            const c = c0 + dc * i;
+            if (grid[r][c] !== "" && grid[r][c] !== palabra[i]) {
+              cabe = false;
+              break;
+            }
+          }
+
+          if (cabe) {
+            for (let i = 0; i < palabra.length; i++) {
+              grid[r0 + dr * i][c0 + dc * i] = palabra[i];
+            }
+            colocada = true;
+          }
+        }
+      }
+
+      const letrasRelleno = "ABCDEFGHIJKLMNÑOPQRSTUVWXYZ";
+      for (let r = 0; r < TAMANO_TABLERO; r++) {
+        for (let c = 0; c < TAMANO_TABLERO; c++) {
+          if (grid[r][c] === "") {
+            grid[r][c] = letrasRelleno[Math.floor(Math.random() * letrasRelleno.length)];
+          }
+        }
+      }
+    }
+
+    function renderizar() {
+      gridEl.innerHTML = "";
+      gridEl.style.gridTemplateColumns = `repeat(${TAMANO_TABLERO}, 1fr)`;
+      cellElements = Array.from({ length: TAMANO_TABLERO }, () => Array(TAMANO_TABLERO));
+
+      for (let r = 0; r < TAMANO_TABLERO; r++) {
+        for (let c = 0; c < TAMANO_TABLERO; c++) {
+          const cell = document.createElement("div");
+          cell.className = "cell";
+          cell.textContent = grid[r][c];
+          cell.dataset.r = r;
+          cell.dataset.c = c;
+          gridEl.appendChild(cell);
+          cellElements[r][c] = cell;
+        }
+      }
+
+      listEl.innerHTML = "";
+      FORMULAS_GSHEETS.forEach(item => {
+        const li = document.createElement("li");
+        li.className = "word-item";
+        li.id = `word-${normalizar(item.palabra)}`;
+        li.textContent = item.palabra.toUpperCase();
+        listEl.appendChild(li);
+      });
+    }
+
+    function obtenerCeldasEntre(r1, c1, r2, c2) {
+      const dr = r2 - r1;
+      const dc = c2 - c1;
+      const pasos = Math.max(Math.abs(dr), Math.abs(dc));
+
+      if (pasos === 0) return [[r1, c1]];
+      // Solo permite líneas rectas horizontales, verticales o diagonales exactas
+      if (dr !== 0 && dc !== 0 && Math.abs(dr) !== Math.abs(dc)) {
+        return [];
+      }
+
+      const stepR = dr === 0 ? 0 : dr / Math.abs(dr);
+      const stepC = dc === 0 ? 0 : dc / Math.abs(dc);
+      const coords = [];
+
+      for (let i = 0; i <= pasos; i++) {
+        coords.push([r1 + stepR * i, c1 + stepC * i]);
+      }
+      return coords;
+    }
+
+    function limpiarSeleccionVisual() {
+      currentSelection.forEach(([r, c]) => {
+        cellElements[r][c].classList.remove("selecting");
+      });
+      currentSelection = [];
+    }
+
+    function actualizarSeleccion(r2, c2) {
+      if (!startCell) return;
+      limpiarSeleccionVisual();
+      const coords = obtenerCeldasEntre(startCell.r, startCell.c, r2, c2);
+      currentSelection = coords;
+      coords.forEach(([r, c]) => {
+        cellElements[r][c].classList.add("selecting");
+      });
+    }
+
+    function validarSeleccion() {
+      if (currentSelection.length < 2) {
+        limpiarSeleccionVisual();
+        return;
+      }
+
+      const palabraFormada = currentSelection.map(([r, c]) => grid[r][c]).join("");
+      const palabraInvertida = [...palabraFormada].reverse().join("");
+
+      const encontrada = FORMULAS_GSHEETS.find(item => {
+        const limpia = normalizar(item.palabra);
+        return !foundWords.has(limpia) && (limpia === palabraFormada || limpia === palabraInvertida);
+      });
+
+      if (encontrada) {
+        const clave = normalizar(encontrada.palabra);
+        foundWords.add(clave);
+
+        currentSelection.forEach(([r, c]) => {
+          const el = cellElements[r][c];
+          el.classList.remove("selecting");
+          el.classList.add("found", "pop");
+        });
+
+        const listItem = document.getElementById(`word-${clave}`);
+        if (listItem) listItem.classList.add("found");
+
+        foundCountEl.textContent = foundWords.size;
+        infoCardEl.innerHTML = `<strong>✅ =${encontrada.palabra.toUpperCase()}()</strong>${encontrada.descripcion}`;
+
+        if (foundWords.size === FORMULAS_GSHEETS.length) {
+          clearInterval(timerInterval);
+          setTimeout(() => {
+            winTextEl.textContent = `¡Encontraste las ${FORMULAS_GSHEETS.length} fórmulas de Google Sheets en ${formatTime(seconds)}!`;
+            winModalEl.classList.remove("hidden");
+          }, 450);
+        }
+      }
+
+      limpiarSeleccionVisual();
+    }
+
+    // Eventos unificados de puntero (Mouse + Touch)
+    gridEl.addEventListener("pointerdown", (e) => {
+      const cell = e.target.closest(".cell");
+      if (!cell) return;
+      isDragging = true;
+      startCell = { r: Number(cell.dataset.r), c: Number(cell.dataset.c) };
+      actualizarSeleccion(startCell.r, startCell.c);
+    });
+
+    gridEl.addEventListener("pointermove", (e) => {
+      if (!isDragging) return;
+      const elem = document.elementFromPoint(e.clientX, e.clientY);
+      const cell = elem ? elem.closest(".cell") : null;
+      if (cell) {
+        actualizarSeleccion(Number(cell.dataset.r), Number(cell.dataset.c));
+      }
+    });
+
+    window.addEventListener("pointerup", () => {
+      if (!isDragging) return;
+      isDragging = false;
+      validarSeleccion();
+      startCell = null;
+    });
+
+    function initGame() {
+      foundWords.clear();
+      isDragging = false;
+      startCell = null;
+      currentSelection = [];
+      winModalEl.classList.add("hidden");
+
+      foundCountEl.textContent = "0";
+      totalCountEl.textContent = FORMULAS_GSHEETS.length;
+      infoCardEl.innerHTML = `<strong>💡 Tip de estudio</strong>Encuentra una fórmula en el tablero para ver aquí para qué sirve en Google Sheets.`;
+
+      generarTablero();
+      renderizar();
+      startTimer();
+    }
+
+    initGame();
+  </script>
+</body>
+</html>

@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portal de Juegos Educativos | BI & Datos</title>
+  <style>
+    :root {
+      --bg-dark: #0f172a;
+      --bg-card: #1e293b;
+      --primary: #3b0764;
+      --primary-light: #6b21a8;
+      --primary-glow: #9333ea;
+      --accent: #10b981;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(circle at 15% 20%, rgba(107, 33, 168, 0.22) 0%, transparent 45%),
+        radial-gradient(circle at 85% 80%, rgba(16, 185, 129, 0.14) 0%, transparent 45%);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1.25rem;
+    }
+
+    header {
+      text-align: center;
+      max-width: 720px;
+      margin-bottom: 2.5rem;
+    }
+
+    .badge-top {
+      display: inline-block;
+      background: rgba(16, 185, 129, 0.14);
+      color: var(--accent);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      padding: 0.35rem 0.9rem;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+
+    h1 {
+      font-size: clamp(1.9rem, 4vw, 2.6rem);
+      font-weight: 800;
+      margin-bottom: 0.65rem;
+      background: linear-gradient(90deg, #e9d5ff, #c084fc, #10b981);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 1.05rem;
+      line-height: 1.5;
+    }
+
+    .games-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.4rem;
+      max-width: 900px;
+      width: 100%;
+    }
+
+    @media (max-width: 680px) {
+      .games-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .game-card {
+      background: var(--bg-card);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 18px;
+      padding: 1.75rem;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 1.25rem;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+    }
+
+    .game-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--primary-light), var(--accent));
+      opacity: 0.7;
+      transition: opacity 0.22s ease;
+    }
+
+    .game-card:hover {
+      transform: translateY(-5px);
+      border-color: rgba(192, 132, 252, 0.45);
+      box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.55), 0 0 20px rgba(107, 33, 168, 0.25);
+    }
+
+    .game-card:hover::before {
+      opacity: 1;
+    }
+
+    .card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .icon-box {
+      width: 54px;
+      height: 54px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.7rem;
+      flex-shrink: 0;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .tag {
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.25rem 0.65rem;
+      border-radius: 6px;
+      background: rgba(15, 23, 42, 0.75);
+      color: #c084fc;
+      border: 1px solid rgba(192, 132, 252, 0.25);
+    }
+
+    .card-body h2 {
+      font-size: 1.3rem;
+      margin-bottom: 0.45rem;
+      color: var(--text-main);
+    }
+
+    .card-body p {
+      color: var(--text-muted);
+      font-size: 0.92rem;
+      line-height: 1.45;
+    }
+
+    .card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 0.9rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      font-weight: 600;
+      font-size: 0.92rem;
+      color: var(--accent);
+    }
+
+    .arrow {
+      transition: transform 0.2s ease;
+    }
+
+    .game-card:hover .arrow {
+      transform: translateX(5px);
+    }
+
+    footer {
+      margin-top: 2.5rem;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="badge-top">🎮 Zona de Entrenamiento Interactivo</div>
+    <h1>Desafíos de Business Intelligence y Datos</h1>
+    <p class="subtitle">Selecciona una modalidad de juego para repasar conceptos, herramientas y fórmulas de forma práctica.</p>
+  </header>
+
+  <main class="games-grid" id="games-grid"></main>
+
+  <footer>
+    Haz clic en cualquier tarjeta para iniciar la actividad correspondiente.
+  </footer>
+
+  <script>
+    /* =========================================================================
+       CONFIGURACIÓN DE ENLACES (ZONA EDITABLE SIN SABER PROGRAMAR)
+       =========================================================================
+       Instrucciones:
+       1. Verifica que el campo "archivo" coincida exactamente con el nombre del
+          archivo .html de cada juego guardado en la misma carpeta (o pega una URL).
+       2. Puedes editar los títulos, etiquetas o descripciones libremente.
+       ========================================================================= */
+
+    const JUEGOS = [
+      {
+        titulo: "Crucigrama",
+        etiqueta: "Vocabulario Técnico",
+        icono: "🧩",
+        descripcion: "Completa la cuadrícula cruzando definiciones y términos clave de análisis de datos.",
+        archivo: "pages/crucigrama.html"
+      },
+      {
+        titulo: "Ahorcado: Looker Studio",
+        etiqueta: "Visualización & BI",
+        icono: "📊",
+        descripcion: "Descubre los conceptos esenciales de reportes, métricas y dimensiones antes de quedarte sin vidas.",
+        archivo: "pages/hang.html"
+      },
+      {
+        titulo: "Sopa de Letras: Google Sheets",
+        etiqueta: "Fórmulas",
+        icono: "📗",
+        descripcion: "Encuentra las funciones más utilizadas en hojas de cálculo escondidas en 8 direcciones.",
+        archivo: "pages/sopa.html"
+      },
+      {
+        titulo: "Cartas de Memoria: BI",
+        etiqueta: "Emparejamiento",
+        icono: "🃏",
+        descripcion: "Conecta cada sigla o concepto de arquitectura de datos con su definición exacta.",
+        archivo: "pages/memoria.html"
+      }
+    ];
+
+    /* =========================================================================
+       RENDERIZADO AUTOMÁTICO DE TARJETAS
+       ========================================================================= */
+
+    const gridEl = document.getElementById("games-grid");
+
+    JUEGOS.forEach(juego => {
+      const card = document.createElement("a");
+      card.className = "game-card";
+      card.href = juego.archivo;
+
+      card.innerHTML = `
+        <div>
+          <div class="card-top">
+            <div class="icon-box">${juego.icono}</div>
+            <span class="tag">${juego.etiqueta}</span>
+          </div>
+          <div class="card-body" style="margin-top: 1.1rem;">
+            <h2>${juego.titulo}</h2>
+            <p>${juego.descripcion}</p>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span>Jugar ahora</span>
+          <span class="arrow">➔</span>
+        </div>
+      `;
+
+      gridEl.appendChild(card);
+    });
+  </script>
+</body>
+</html>

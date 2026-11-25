@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crucigrama: Ética de Datos y Casos Famosos</title>
+  <style>
+    :root {
+      --bg-dark: #0f172a;
+      --bg-panel: #1e293b;
+      --primary: #3b0764;
+      --primary-light: #6b21a8;
+      --primary-glow: #9333ea;
+      --accent: #10b981;
+      --error: #ef4444;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --cell-bg: #0b1120;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1.25rem 1rem 2.5rem;
+    }
+
+    header {
+      text-align: center;
+      max-width: 860px;
+      margin-bottom: 1.25rem;
+    }
+
+    h1 {
+      font-size: 1.85rem;
+      margin-bottom: 0.35rem;
+      background: linear-gradient(90deg, #c084fc, #10b981);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 0.85rem;
+      background: var(--bg-panel);
+      padding: 0.7rem 1.25rem;
+      border-radius: 12px;
+      margin-bottom: 1.35rem;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .stat {
+      font-weight: 600;
+      font-size: 0.92rem;
+      padding-right: 0.5rem;
+    }
+
+    .stat span {
+      color: var(--accent);
+    }
+
+    .btn {
+      background: linear-gradient(90deg, var(--primary-light), var(--primary-glow));
+      color: white;
+      border: none;
+      padding: 0.55rem 1.1rem;
+      font-size: 0.88rem;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: transform 0.15s, opacity 0.15s;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      opacity: 0.95;
+    }
+
+    .btn-secondary {
+      background: #334155;
+    }
+
+    .btn-accent {
+      background: linear-gradient(90deg, #059669, var(--accent));
+    }
+
+    .main-layout {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 1.5rem;
+      max-width: 1180px;
+      width: 100%;
+    }
+
+    .board-container {
+      background: var(--bg-panel);
+      padding: 1rem;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.45);
+      overflow-x: auto;
+      max-width: 100%;
+    }
+
+    .crossword-grid {
+      display: grid;
+      gap: 2px;
+      background: rgba(15, 23, 42, 0.5);
+      padding: 4px;
+      border-radius: 8px;
+      width: max-content;
+    }
+
+    .cell {
+      width: 32px;
+      height: 32px;
+      position: relative;
+      border-radius: 4px;
+    }
+
+    .cell.empty {
+      background: transparent;
+    }
+
+    .cell.active-cell {
+      background: var(--cell-bg);
+      border: 1px solid #475569;
+    }
+
+    .cell.highlighted {
+      background: rgba(147, 51, 234, 0.25);
+      border-color: #c084fc;
+    }
+
+    .cell.focused {
+      background: rgba(147, 51, 234, 0.5);
+      border: 2px solid #e9d5ff;
+    }
+
+    .cell.correct {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: var(--accent);
+    }
+
+    .cell.wrong {
+      background: rgba(239, 68, 68, 0.22);
+      border-color: var(--error);
+    }
+
+    .cell-number {
+      position: absolute;
+      top: 1px;
+      left: 3px;
+      font-size: 0.62rem;
+      font-weight: 700;
+      color: #c084fc;
+      pointer-events: none;
+      line-height: 1;
+    }
+
+    .cell input {
+      width: 100%;
+      height: 100%;
+      background: transparent;
+      border: none;
+      text-align: center;
+      color: var(--text-main);
+      font-size: 1rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      outline: none;
+      caret-color: transparent;
+      padding-top: 4px;
+      cursor: pointer;
+    }
+
+    .cell.correct input {
+      color: #6ee7b7;
+    }
+
+    @media (max-width: 680px) {
+      .cell {
+        width: 24px;
+        height: 24px;
+      }
+      .cell input {
+        font-size: 0.82rem;
+      }
+      .cell-number {
+        font-size: 0.52rem;
+      }
+    }
+
+    .clues-panel {
+      flex: 1;
+      min-width: 300px;
+      max-width: 460px;
+      background: var(--bg-panel);
+      padding: 1.25rem;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      flex-direction: column;
+      gap: 1.15rem;
+    }
+
+    .clue-section h2 {
+      font-size: 1rem;
+      color: var(--accent);
+      margin-bottom: 0.6rem;
+      padding-bottom: 0.35rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .clue-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+    }
+
+    .clue-item {
+      padding: 0.55rem 0.7rem;
+      border-radius: 8px;
+      background: rgba(15, 23, 42, 0.55);
+      font-size: 0.86rem;
+      line-height: 1.4;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.15s;
+    }
+
+    .clue-item:hover {
+      border-color: rgba(192, 132, 252, 0.4);
+    }
+
+    .clue-item.active {
+      background: rgba(107, 33, 168, 0.35);
+      border-color: #c084fc;
+    }
+
+    .clue-item.solved {
+      text-decoration: line-through;
+      color: var(--text-muted);
+      border-color: rgba(16, 185, 129, 0.35);
+    }
+
+    .clue-item strong {
+      color: #c084fc;
+      margin-right: 0.3rem;
+    }
+
+    /* Modal de Victoria */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      z-index: 30;
+    }
+
+    .overlay.hidden {
+      display: none;
+    }
+
+    .modal {
+      background: var(--bg-panel);
+      padding: 2rem;
+      border-radius: 16px;
+      max-width: 440px;
+      width: 100%;
+      text-align: center;
+      border: 1px solid rgba(16, 185, 129, 0.45);
+      box-shadow: 0 25px 30px -5px rgba(0, 0, 0, 0.6);
+    }
+
+    .modal h2 {
+      font-size: 1.6rem;
+      color: var(--accent);
+      margin-bottom: 0.65rem;
+    }
+
+    .modal p {
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>🧩 Crucigrama: Ética de Datos y Casos Famosos</h1>
+    <p class="subtitle">Haz clic en cualquier pista o casilla y escribe para completar los conceptos clave y escándalos históricos de datos.</p>
+  </header>
+
+  <div class="toolbar">
+    <a href="../index.html" class="btn btn-secondary">⬅ Inicio</a>
+    <div class="stat">Completadas: <span id="solved-count">0</span> / <span id="total-count">9</span></div>
+    <button class="btn btn-accent" onclick="verificarTodo()">✔ Verificar</button>
+    <button class="btn btn-secondary" onclick="darPistaLetra()">💡 Revelar Letra</button>
+    <button class="btn" onclick="iniciarCrucigrama()">↻ Reiniciar</button>
+  </div>
+
+  <main class="main-layout">
+    <div class="board-container">
+      <div class="crossword-grid" id="crossword-grid"></div>
+    </div>
+
+    <aside class="clues-panel">
+      <div class="clue-section">
+        <h2>➡ Horizontales</h2>
+        <ul class="clue-list" id="clues-across"></ul>
+      </div>
+      <div class="clue-section">
+        <h2>⬇ Verticales</h2>
+        <ul class="clue-list" id="clues-down"></ul>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Modal de Victoria -->
+  <div class="overlay hidden" id="win-modal">
+    <div class="modal">
+      <h2>🏆 ¡Crucigrama Completado!</h2>
+      <p>Dominaste todos los principios de ética de datos y casos históricos de privacidad y algoritmos.</p>
+      <div style="display: flex; gap: 0.75rem; justify-content: center;">
+        <button class="btn" onclick="iniciarCrucigrama()">Jugar de Nuevo</button>
+        <a href="../index.html" class="btn btn-secondary">Volver al Portal</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* =========================================================================
+       CONFIGURACIÓN DEL CRUCIGRAMA (ZONA EDITABLE SIN SABER PROGRAMAR)
+       =========================================================================
+       Instrucciones para personalizar:
+       1. Cada objeto en PALABRAS_CRUCIGRAMA define una palabra cruzada en el tablero:
+          - numero: Número visible en la casilla inicial y en la lista de pistas.
+          - direccion: "H" (Horizontal) o "V" (Vertical).
+          - fila / col: Coordenada inicial (empezando en 0). Las letras donde se
+            cruzan dos palabras deben coincidir exactamente.
+          - respuesta: Palabra en mayúsculas y sin espacios ni tildes.
+          - pista: Definición o caso famoso asociado.
+       ========================================================================= */
+
+    const FILAS = 19;
+    const COLUMNAS = 19;
+
+    const PALABRAS_CRUCIGRAMA = [
+      {
+        numero: 1,
+        direccion: "V",
+        fila: 0,
+        col: 9,
+        respuesta: "CAMBRIDGEANALYTICA",
+        pista: "Caso famoso (2018): consultora política que recolectó sin permiso datos de millones de perfiles de Facebook."
+      },
+      {
+        numero: 2,
+        direccion: "H",
+        fila: 2,
+        col: 2,
+        respuesta: "TRANSPARENCIA",
+        pista: "Principio ético que exige explicar de forma clara cómo se recopilan, usan y procesan los datos."
+      },
+      {
+        numero: 3,
+        direccion: "V",
+        fila: 2,
+        col: 4,
+        respuesta: "ANONIMIZACION",
+        pista: "Técnica que elimina o cifra identificadores personales para que un individuo no pueda ser rastreado."
+      },
+      {
+        numero: 4,
+        direccion: "H",
+        fila: 5,
+        col: 1,
+        respuesta: "CONSENTIMIENTO",
+        pista: "Autorización libre, informada y explícita que debe otorgar un usuario antes de tratar sus datos."
+      },
+      {
+        numero: 5,
+        direccion: "V",
+        fila: 5,
+        col: 13,
+        respuesta: "TARGET",
+        pista: "Caso famoso: cadena minorista que predijo el embarazo de una adolescente mediante hábitos de compra antes que su padre."
+      },
+      {
+        numero: 6,
+        direccion: "H",
+        fila: 8,
+        col: 7,
+        respuesta: "PRIVACIDAD",
+        pista: "Derecho fundamental de las personas a controlar qué información personal comparten y con quién."
+      },
+      {
+        numero: 7,
+        direccion: "V",
+        fila: 8,
+        col: 15,
+        respuesta: "EQUIFAX",
+        pista: "Caso famoso (2017): brecha masiva de seguridad en una agencia crediticia que expuso datos financieros de 147 millones de personas."
+      },
+      {
+        numero: 8,
+        direccion: "H",
+        fila: 11,
+        col: 6,
+        respuesta: "GDPR",
+        pista: "Reglamento General de Protección de Datos de la Unión Europea, estándar global de privacidad."
+      },
+      {
+        numero: 9,
+        direccion: "H",
+        fila: 14,
+        col: 7,
+        respuesta: "SESGO",
+        pista: "Distorsión en un modelo de datos o algoritmo (como el caso COMPAS o contratación en Amazon) que discrimina grupos."
+      }
+    ];
+
+    /* =========================================================================
+       LÓGICA DEL CRUCIGRAMA (NO ES NECESARIO MODIFICAR DE AQUÍ EN ADELANTE)
+       ========================================================================= */
+
+    let boardData = [];
+    let inputsMap = {};
+    let palabraActiva = PALABRAS_CRUCIGRAMA[0];
+    let celdaActiva = { r: palabraActiva.fila, c: palabraActiva.col };
+
+    const gridEl = document.getElementById("crossword-grid");
+    const cluesAcrossEl = document.getElementById("clues-across");
+    const cluesDownEl = document.getElementById("clues-down");
+    const solvedCountEl = document.getElementById("solved-count");
+    const totalCountEl = document.getElementById("total-count");
+    const winModalEl = document.getElementById("win-modal");
+
+    function iniciarCrucigrama() {
+      winModalEl.classList.add("hidden");
+      inputsMap = {};
+      boardData = Array.from({ length: FILAS }, () =>
+        Array.from({ length: COLUMNAS }, () => ({
+          letter: null,
+          numbers: [],
+          words: []
+        }))
+      );
+
+      PALABRAS_CRUCIGRAMA.forEach(item => {
+        const dr = item.direccion === "V" ? 1 : 0;
+        const dc = item.direccion === "H" ? 1 : 0;
+        for (let i = 0; i < item.respuesta.length; i++) {
+          const r = item.fila + dr * i;
+          const c = item.col + dc * i;
+          boardData[r][c].letter = item.respuesta[i];
+          boardData[r][c].words.push(item);
+          if (i === 0) {
+            boardData[r][c].numbers.push(item.numero);
+          }
+        }
+      });
+
+      renderizarTablero();
+      renderizarPistas();
+      totalCountEl.textContent = PALABRAS_CRUCIGRAMA.length;
+      solvedCountEl.textContent = "0";
+      seleccionarPalabra(PALABRAS_CRUCIGRAMA[0], true);
+    }
+
+    function renderizarTablero() {
+      gridEl.innerHTML = "";
+      gridEl.style.gridTemplateColumns = `repeat(${COLUMNAS}, 1fr)`;
+
+      for (let r = 0; r < FILAS; r++) {
+        for (let c = 0; c < COLUMNAS; c++) {
+          const cellData = boardData[r][c];
+          const cellDiv = document.createElement("div");
+
+          if (!cellData.letter) {
+            cellDiv.className = "cell empty";
+            gridEl.appendChild(cellDiv);
+            continue;
+          }
+
+          cellDiv.className = "cell active-cell";
+          cellDiv.dataset.r = r;
+          cellDiv.dataset.c = c;
+
+          if (cellData.numbers.length > 0) {
+            const numSpan = document.createElement("span");
+            numSpan.className = "cell-number";
+            numSpan.textContent = cellData.numbers.join("/");
+            cellDiv.appendChild(numSpan);
+          }
+
+          const input = document.createElement("input");
+          input.type = "text";
+          input.maxLength = 1;
+          input.autocomplete = "off";
+          input.dataset.r = r;
+          input.dataset.c = c;
+
+          input.addEventListener("click", () => manejarClicCelda(r, c));
+          input.addEventListener("input", (e) => manejarEntrada(e, r, c));
+          input.addEventListener("keydown", (e) => manejarTeclado(e, r, c));
+
+          cellDiv.appendChild(input);
+          gridEl.appendChild(cellDiv);
+          inputsMap[`${r}-${c}`] = { cell: cellDiv, input };
+        }
+      }
+    }
+
+    function renderizarPistas() {
+      cluesAcrossEl.innerHTML = "";
+      cluesDownEl.innerHTML = "";
+
+      PALABRAS_CRUCIGRAMA.forEach(item => {
+        const li = document.createElement("li");
+        li.className = "clue-item";
+        li.id = `clue-${item.numero}-${item.direccion}`;
+        li.innerHTML = `<strong>${item.numero}.</strong> ${item.pista}`;
+        li.addEventListener("click", () => seleccionarPalabra(item, true));
+
+        if (item.direccion === "H") {
+          cluesAcrossEl.appendChild(li);
+        } else {
+          cluesDownEl.appendChild(li);
+        }
+      });
+    }
+
+    function seleccionarPalabra(item, enfocarInicio = false) {
+      palabraActiva = item;
+      if (enfocarInicio) {
+        celdaActiva = { r: item.fila, c: item.col };
+      }
+      actualizarResaltado();
+      const target = inputsMap[`${celdaActiva.r}-${celdaActiva.c}`];
+      if (target) target.input.focus();
+    }
+
+    function manejarClicCelda(r, c) {
+      const wordsHere = boardData[r][c].words;
+      if (celdaActiva.r === r && celdaActiva.c === c && wordsHere.length > 1) {
+        const idx = wordsHere.indexOf(palabraActiva);
+        palabraActiva = wordsHere[(idx + 1) % wordsHere.length];
+      } else if (!wordsHere.includes(palabraActiva)) {
+        palabraActiva = wordsHere[0];
+      }
+      celdaActiva = { r, c };
+      actualizarResaltado();
+    }
+
+    function actualizarResaltado() {
+      Object.values(inputsMap).forEach(({ cell }) => {
+        cell.classList.remove("highlighted", "focused");
+      });
+      document.querySelectorAll(".clue-item").forEach(el => el.classList.remove("active"));
+
+      const dr = palabraActiva.direccion === "V" ? 1 : 0;
+      const dc = palabraActiva.direccion === "H" ? 1 : 0;
+
+      for (let i = 0; i < palabraActiva.respuesta.length; i++) {
+        const r = palabraActiva.fila + dr * i;
+        const c = palabraActiva.col + dc * i;
+        const obj = inputsMap[`${r}-${c}`];
+        if (obj) obj.cell.classList.add("highlighted");
+      }
+
+      const activeObj = inputsMap[`${celdaActiva.r}-${celdaActiva.c}`];
+      if (activeObj) activeObj.cell.classList.add("focused");
+
+      const clueEl = document.getElementById(`clue-${palabraActiva.numero}-${palabraActiva.direccion}`);
+      if (clueEl) {
+        clueEl.classList.add("active");
+        clueEl.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      }
+    }
+
+    function normalizarLetra(str) {
+      return str
+        .toUpperCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^A-ZÑ]/g, "");
+    }
+
+    function manejarEntrada(e, r, c) {
+      const val = normalizarLetra(e.target.value);
+      e.target.value = val ? val[val.length - 1] : "";
+      inputsMap[`${r}-${c}`].cell.classList.remove("wrong", "correct");
+
+      if (e.target.value) {
+        moverSiguiente(r, c, 1);
+      }
+      evaluarProgreso();
+    }
+
+    function manejarTeclado(e, r, c) {
+      if (e.key === "Backspace") {
+        const current = inputsMap[`${r}-${c}`].input;
+        inputsMap[`${r}-${c}`].cell.classList.remove("wrong", "correct");
+        if (current.value === "") {
+          moverSiguiente(r, c, -1);
+        } else {
+          current.value = "";
+        }
+        e.preventDefault();
+        evaluarProgreso();
+      } else if (e.key === "ArrowRight") {
+        moverLibre(r, c + 1);
+      } else if (e.key === "ArrowLeft") {
+        moverLibre(r, c - 1);
+      } else if (e.key === "ArrowDown") {
+        moverLibre(r + 1, c);
+      } else if (e.key === "ArrowUp") {
+        moverLibre(r - 1, c);
+      }
+    }
+
+    function moverSiguiente(r, c, paso) {
+      const dr = palabraActiva.direccion === "V" ? paso : 0;
+      const dc = palabraActiva.direccion === "H" ? paso : 0;
+      const nr = r + dr;
+      const nc = c + dc;
+      if (inputsMap[`${nr}-${nc}`]) {
+        celdaActiva = { r: nr, c: nc };
+        actualizarResaltado();
+        inputsMap[`${nr}-${nc}`].input.focus();
+      }
+    }
+
+    function moverLibre(nr, nc) {
+      if (inputsMap[`${nr}-${nc}`]) {
+        const wordsHere = boardData[nr][nc].words;
+        if (!wordsHere.includes(palabraActiva)) {
+          palabraActiva = wordsHere[0];
+        }
+        celdaActiva = { r: nr, c: nc };
+        actualizarResaltado();
+        inputsMap[`${nr}-${nc}`].input.focus();
+      }
+    }
+
+    function evaluarProgreso() {
+      let resueltas = 0;
+
+      PALABRAS_CRUCIGRAMA.forEach(item => {
+        const dr = item.direccion === "V" ? 1 : 0;
+        const dc = item.direccion === "H" ? 1 : 0;
+        let completaCorrecta = true;
+
+        for (let i = 0; i < item.respuesta.length; i++) {
+          const r = item.fila + dr * i;
+          const c = item.col + dc * i;
+          const val = inputsMap[`${r}-${c}`].input.value;
+          if (val !== item.respuesta[i]) {
+            completaCorrecta = false;
+            break;
+          }
+        }
+
+        const clueEl = document.getElementById(`clue-${item.numero}-${item.direccion}`);
+        if (completaCorrecta) {
+          resueltas++;
+          if (clueEl) clueEl.classList.add("solved");
+          for (let i = 0; i < item.respuesta.length; i++) {
+            const r = item.fila + dr * i;
+            const c = item.col + dc * i;
+            inputsMap[`${r}-${c}`].cell.classList.add("correct");
+          }
+        } else {
+          if (clueEl) clueEl.classList.remove("solved");
+        }
+      });
+
+      solvedCountEl.textContent = resueltas;
+
+      if (resueltas === PALABRAS_CRUCIGRAMA.length) {
+        setTimeout(() => {
+          winModalEl.classList.remove("hidden");
+        }, 350);
+      }
+    }
+
+    function verificarTodo() {
+      Object.entries(inputsMap).forEach(([key, { cell, input }]) => {
+        const [r, c] = key.split("-").map(Number);
+        const esperada = boardData[r][c].letter;
+        cell.classList.remove("correct", "wrong");
+
+        if (input.value) {
+          if (input.value === esperada) {
+            cell.classList.add("correct");
+          } else {
+            cell.classList.add("wrong");
+          }
+        }
+      });
+      evaluarProgreso();
+    }
+
+    function darPistaLetra() {
+      const obj = inputsMap[`${celdaActiva.r}-${celdaActiva.c}`];
+      if (!obj) return;
+      obj.input.value = boardData[celdaActiva.r][celdaActiva.c].letter;
+      obj.cell.classList.remove("wrong");
+      obj.cell.classList.add("correct");
+      moverSiguiente(celdaActiva.r, celdaActiva.c, 1);
+      evaluarProgreso();
+    }
+
+    iniciarCrucigrama();
+  </script>
+</body>
+</html>
